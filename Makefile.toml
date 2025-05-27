@@ -110,7 +110,7 @@ dependencies = ["test-backend", "test-app", "test-frontend"]
 
 [tasks.docker-build]
 script = '''
-docker build -t solang-playground .  
+docker build -t zsolangpg .  
 '''
 
 [tasks.docker-run]
@@ -121,7 +121,7 @@ docker run \
 	  --detach \
 	  --volume /tmp:/tmp \
 	  --publish 9000:9000 \
-	  solang-playground
+	  zsolangpg
 '''
 
 [tasks.docker-log]
