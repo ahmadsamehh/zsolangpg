@@ -7,4 +7,5 @@ sleep 3
 # pull solang image 
 docker pull ghcr.io/hyperledger-solang/solang:latest
 
-cargo make run
+# cargo make run
+/app/backend
