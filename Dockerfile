@@ -146,7 +146,7 @@ FROM base as builder
 RUN rustup toolchain install stable
 RUN rustup toolchain install nightly-2024-02-04
 RUN rustup target add wasm32-unknown-unknown
-RUN cargo install cargo-make
+RUN cargo install cargo-make --locked
 
 # Install Node
 RUN apt-get --yes update
