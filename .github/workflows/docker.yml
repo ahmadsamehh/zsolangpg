@@ -42,7 +42,7 @@ jobs:
       - name: Allow Docker image to boot up
         uses: juliangruber/sleep-action@v1
         with:
-          time: 120s
+          time: 200s
 
       # Needed to run tests
       - name: Install npm dependencies
