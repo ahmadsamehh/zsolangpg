@@ -120,7 +120,7 @@ jobs:
       - name: Wait for backend server to be ready
         # Replace fixed sleep with an active check loop
         run: |
-          echo "Waiting for backend server on http://localhost:9000 ..."
+          echo "Waiting for backend server on http://localhost:4444 to be ready..."
           timeout=180 # Wait for up to 3 minutes
           start_time=$(date +%s )
           while true; do
@@ -132,7 +132,7 @@ jobs:
               exit 1
             fi
             # Check if the server is responding on the root path (adjust if needed)
-            if curl -sf http://localhost:9000/; then
+            if curl -sf http://localhost:4444/; then
               echo "Backend server is ready."
               break
             fi
