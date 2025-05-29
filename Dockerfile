@@ -215,9 +215,8 @@ RUN rustup update stable && \
     rustup target add wasm32-unknown-unknown
 
 RUN cargo install cargo-make --locked
-# Install Node
-RUN apt-get --yes update
-RUN apt-get --yes upgrade
+# Install Node in builder stage
+RUN apt-get --yes update && apt-get --yes upgrade
 ENV NVM_DIR /usr/local/nvm
 ENV NODE_VERSION v18.16.1
 RUN mkdir -p /usr/local/nvm && apt-get update && echo "y" | apt-get install curl
@@ -242,8 +241,8 @@ RUN cargo make build-backend
 # Start from a base image (comes with docker)
 FROM nestybox/ubuntu-jammy-systemd-docker:latest
 
-# Install dependencies needed for Rust installation and runtime
-RUN apt-get update && apt-get install -y curl build-essential pkg-config libssl-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install dependencies needed for Rust, Node.js installation and runtime
+RUN apt-get update && apt-get install -y curl build-essential pkg-config libssl-dev dos2unix && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Rust (including cargo)
 ENV RUSTUP_HOME=/usr/local/rustup \
@@ -254,6 +253,12 @@ RUN curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
 # Install cargo-make
 RUN cargo install cargo-make --locked
 
+# Install Node.js and npm (using NodeSource)
+# Match the version used in the builder stage (v18.x)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get update && apt-get install -y nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Set working directory in final image
 WORKDIR /app
 
@@ -262,12 +267,12 @@ COPY --from=builder /app /app
 
 EXPOSE 4444
 
-# Startup scripts: Copy script, ensure LF endings (just in case), and set permissions
-# Install dos2unix just to be safe, although installing Rust might fix path issues
-RUN apt-get update && apt-get install -y dos2unix && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Startup scripts: Copy script, ensure LF endings, and set permissions
 COPY sysbox/on-start.sh /usr/bin/
 RUN dos2unix /usr/bin/on-start.sh && chmod +x /usr/bin/on-start.sh
 
 # Entrypoint (using the original script that calls cargo make run)
 ENTRYPOINT [ "/usr/bin/on-start.sh" ]
+
+
 
