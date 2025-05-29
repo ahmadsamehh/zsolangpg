@@ -45,7 +45,7 @@ ENV PATH $NODE_PATH:$PATH
 RUN cargo make deps-wasm
 RUN cargo make deps-npm
 
-# Build 
+# Build
 RUN cargo make build-server
 RUN cargo make build-bindings
 RUN cargo make build-app
@@ -62,11 +62,11 @@ COPY --from=builder /app/packages/app/dist /app/packages/app/dist
 COPY --from=builder /app/target/release/backend /app/target/release/backend
 
 # Startup scripts
-COPY sysbox/on-start.sh /usr/bin/on-start.sh
+COPY sysbox/on-start.sh /usr/bin/
 RUN chmod +x /usr/bin/on-start.sh
 
 # Entrypoint
-ENTRYPOINT [ "/usr/bin/on-start.sh" ]
+ENTRYPOINT [ "on-start.sh" ]
 
 
 # ##########################################################NEWWWWW###########################################################
