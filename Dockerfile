@@ -18,11 +18,11 @@ RUN apt-get update -y && \
 
 
 
-#Rust setup
-RUN rustup toolchain install stable
-RUN rustup toolchain install nightly-2024-02-04
-RUN rustup target add wasm32-unknown-unknown
-RUN cargo install cargo-make
+# #Rust setup
+# RUN rustup toolchain install stable
+# RUN rustup toolchain install nightly-2024-02-04
+# RUN rustup target add wasm32-unknown-unknown
+# RUN cargo install cargo-make
 
 
 RUN rustup update stable && \
