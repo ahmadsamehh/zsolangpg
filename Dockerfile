@@ -262,10 +262,13 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 # Set working directory in final image
 WORKDIR /app
 
-# Copy the entire built application source (needed for cargo make run)
-COPY --from=builder /app /app
+# Copy built artifacts from builder
+COPY --from=builder /app/packages/app/dist /app/packages/app/dist
+COPY --from=builder /app/target/release/backend /usr/local/bin/backend
 
 EXPOSE 4444
+
+
 
 # Startup scripts: Copy script, ensure LF endings, and set permissions
 COPY sysbox/on-start.sh /usr/bin/
