@@ -115,7 +115,7 @@ jobs:
 
       - name: Run docker container in detached mode
         # Run in detached mode (-d ) and publish port 9000
-        run: docker run --runtime=sysbox-runc -d -p 9000:9000 --name zsolangpg_backend solang-playground:latest
+        run: docker run --runtime=sysbox-runc -d -p 3000:3000 --name zsolangpg_backend solang-playground:latest
 
       - name: Wait for backend server to be ready
         # Replace fixed sleep with an active check loop
@@ -150,7 +150,7 @@ jobs:
       - name: Test application
         env:
           # Set the BACKEND_URL for the tests
-          BACKEND_URL: http://localhost:9000
+          BACKEND_URL: http://localhost:4444
         run: cargo make test-app
 
       - name: Show container logs
