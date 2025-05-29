@@ -114,8 +114,8 @@ jobs:
         run: docker build -t solang-playground:latest .
 
       - name: Run docker container in detached mode
-        # Run in detached mode (-d ) and publish port 9000
-        run: docker run --runtime=sysbox-runc -d -p 3000:3000 --name zsolangpg_backend solang-playground:latest
+        # Run in detached mode (-d ) and publish port 4444
+        run: docker run --runtime=sysbox-runc -d -p 4444:4444 --name zsolangpg_backend solang-playground:latest
 
       - name: Wait for backend server to be ready
         # Replace fixed sleep with an active check loop
