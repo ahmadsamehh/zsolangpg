@@ -45,14 +45,14 @@ jobs:
           time: 120s
 
       # Needed to run tests
-     # - name: Install npm dependencies
-      #  run: cargo make deps-npm
+      - name: Install npm dependencies
+        run: cargo make deps-npm
 
-      #- name: Test
-       # run: cargo make test-app
+      - name: Test
+        run: cargo make test-app
 
-     # - name: Show logs
-      #  run: cargo make docker-log
+      - name: Show logs
+        run: cargo make docker-log
 
         # New steps added below for Docker push
       - name: Log in to Docker Hub
