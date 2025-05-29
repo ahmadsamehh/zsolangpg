@@ -4,8 +4,7 @@
 dockerd > /var/log/dockerd.log 2>&1 &
 sleep 3
 
-# pull solang image 
+# pull solang image
 docker pull ghcr.io/hyperledger-solang/solang:latest
 
-# cargo make run
-/app/backend
+cargo make run
