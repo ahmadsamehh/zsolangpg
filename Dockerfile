@@ -58,8 +58,10 @@ RUN cargo make build-backend
 FROM nestybox/ubuntu-jammy-systemd-docker:latest
 
 # Copy the built files
-COPY --from=builder /app/packages/app/dist /app/packages/app/dist
-COPY --from=builder /app/target/release/backend /app/target/release/backend
+# COPY --from=builder /app/packages/app/dist /app/packages/app/dist
+# COPY --from=builder /app/target/release/backend /app/target/release/backend
+COPY --from=builder /app/... ...
+EXPOSE 4444
 
 # Startup scripts
 COPY sysbox/on-start.sh /usr/bin/
