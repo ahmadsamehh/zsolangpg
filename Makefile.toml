@@ -46,7 +46,13 @@ cargo build -p backend --release
 '''
 
 [tasks.build]
-dependencies = ["build-server", "build-bindings", "build-app","build-frontend", "build-backend"]
+dependencies = [
+	"build-server",
+	"build-bindings",
+	"build-app",
+	"build-frontend",
+	"build-backend",
+]
 
 [tasks.clean-server]
 script = '''
@@ -110,7 +116,7 @@ dependencies = ["test-backend", "test-app", "test-frontend"]
 
 [tasks.docker-build]
 script = '''
-docker build -t zsolangpg .  
+docker build -t zsolangpg .
 '''
 
 [tasks.docker-run]
@@ -120,7 +126,7 @@ docker run \
 	  --name playground-makee \
 	  --detach \
 	  --volume /tmp:/tmp \
-	  --publish 9000:9000 \
+	  --publish 4444:4444 \
 	  zsolangpg
 '''
 
