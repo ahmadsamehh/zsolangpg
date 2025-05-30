@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "set NODE_ENV=production & next build",
     "start": "next start",
-    "lint": "next lint",
-    "export": "next build && next export"
+    "lint": "next lint"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",

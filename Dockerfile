@@ -1,19 +1,18 @@
 # Stage 1: Build environment
-# Use a specific Rust version for consistency
 FROM rust:1.77-bookworm as builder
 
 WORKDIR /app
 
-# Install build dependencies: pkg-config, libssl-dev (for Rust builds), curl (for nvm)
+# Install build dependencies: pkg-config, libssl-dev, curl
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     libssl-dev \
     curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js using NVM (matching user's original approach)
+# Install Node.js using NVM (Use a compatible version, e.g., 20.x)
 ENV NVM_DIR /usr/local/nvm
-ENV NODE_VERSION v18.16.1
+ENV NODE_VERSION v20.14.0
 RUN mkdir -p $NVM_DIR && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
     /bin/bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm use --delete-prefix $NODE_VERSION && nvm alias default $NODE_VERSION && nvm cache clear"
@@ -34,33 +33,41 @@ COPY . .
 RUN cargo make deps-npm
 RUN cargo make deps-wasm
 
-# Build the application (backend, frontend, etc.)
+# Build the application
+# Ensure build-frontend runs `next build` successfully
 RUN cargo make build-server
 RUN cargo make build-bindings
-# RUN cargo make build-app # Assuming this isn't needed if frontend is separate
-RUN cargo make build-frontend # This should run 'npm run export --workspace=packages/frontend'
+RUN cargo make build-frontend # This should run `npm run build --workspace=packages/frontend`
 RUN cargo make build-backend
 
-# --- Optional: Add debug listing here if build issues persist ---
+# --- Optional: Debug listing --- 
 # RUN echo "--- Listing build outputs --- " && \
 #     ls -la /app/target/release/ && \
-#     ls -la /app/packages/frontend/out/
+#     ls -la /app/packages/frontend/.next/
 
 # Stage 2: Final runtime image
 FROM nestybox/ubuntu-jammy-systemd-docker:latest
 
-# Install runtime dependencies: libssl3 (runtime counterpart for libssl-dev), dos2unix
+# Install runtime dependencies: libssl3, Node.js, dos2unix
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl3 \
+    curl \
     dos2unix \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js (same compatible version as builder stage)
+# Using NodeSource method for simplicity in final image
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get update && apt-get install -y nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy necessary built artifacts from the builder stage
 COPY --from=builder /app/target/release/backend /app/backend
-# Updated: Copy the static export output from the frontend build
-COPY --from=builder /app/packages/frontend/out /app/frontend_dist
+
+# Copy the entire frontend package directory (including .next, node_modules, package.json)
+COPY --from=builder /app/packages/frontend /app/packages/frontend
 
 # Copy the startup script
 COPY sysbox/on-start.sh /usr/local/bin/on-start.sh
@@ -68,12 +75,137 @@ COPY sysbox/on-start.sh /usr/local/bin/on-start.sh
 # Ensure script has correct line endings and is executable
 RUN dos2unix /usr/local/bin/on-start.sh && chmod +x /usr/local/bin/on-start.sh
 
-# Expose the backend port
+# Expose both backend and frontend ports
 EXPOSE 4444
 EXPOSE 3000
 
 # Set the entrypoint to the startup script
 ENTRYPOINT ["/usr/local/bin/on-start.sh"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# # Stage 1: Build environment
+# # Use a specific Rust version for consistency
+# FROM rust:1.77-bookworm as builder
+
+# WORKDIR /app
+
+# # Install build dependencies: pkg-config, libssl-dev (for Rust builds), curl (for nvm)
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     pkg-config \
+#     libssl-dev \
+#     curl \
+#     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# # Install Node.js using NVM (matching user's original approach)
+# ENV NVM_DIR /usr/local/nvm
+# ENV NODE_VERSION v18.16.1
+# RUN mkdir -p $NVM_DIR && \
+#     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
+#     /bin/bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm use --delete-prefix $NODE_VERSION && nvm alias default $NODE_VERSION && nvm cache clear"
+# ENV NODE_PATH $NVM_DIR/versions/node/$NODE_VERSION/bin
+# ENV PATH $NODE_PATH:$PATH
+
+# # Set up Rust environment
+# RUN rustup default stable && \
+#     rustup target add wasm32-unknown-unknown
+
+# # Install cargo-make
+# RUN cargo install cargo-make --locked
+
+# # Copy source code
+# COPY . .
+
+# # Install dependencies (npm and wasm)
+# RUN cargo make deps-npm
+# RUN cargo make deps-wasm
+
+# # Build the application (backend, frontend, etc.)
+# RUN cargo make build-server
+# RUN cargo make build-bindings
+# # RUN cargo make build-app # Assuming this isn't needed if frontend is separate
+# RUN cargo make build-frontend # This should run 'npm run export --workspace=packages/frontend'
+# RUN cargo make build-backend
+
+# # --- Optional: Add debug listing here if build issues persist ---
+# # RUN echo "--- Listing build outputs --- " && \
+# #     ls -la /app/target/release/ && \
+# #     ls -la /app/packages/frontend/out/
+
+# # Stage 2: Final runtime image
+# FROM nestybox/ubuntu-jammy-systemd-docker:latest
+
+# # Install runtime dependencies: libssl3 (runtime counterpart for libssl-dev), dos2unix
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     libssl3 \
+#     dos2unix \
+#     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# WORKDIR /app
+
+# # Copy necessary built artifacts from the builder stage
+# COPY --from=builder /app/target/release/backend /app/backend
+# # Updated: Copy the static export output from the frontend build
+# COPY --from=builder /app/packages/frontend/out /app/frontend_dist
+
+# # Copy the startup script
+# COPY sysbox/on-start.sh /usr/local/bin/on-start.sh
+
+# # Ensure script has correct line endings and is executable
+# RUN dos2unix /usr/local/bin/on-start.sh && chmod +x /usr/local/bin/on-start.sh
+
+# # Expose the backend port
+# EXPOSE 4444
+# EXPOSE 3000
+
+# # Set the entrypoint to the startup script
+# ENTRYPOINT ["/usr/local/bin/on-start.sh"]
 
 
 
