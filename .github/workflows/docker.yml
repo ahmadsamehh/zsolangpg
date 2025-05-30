@@ -72,8 +72,111 @@
 
 
 
-##########################################NEW MANUS EDIT ##########################################
-name: Docker CI
+# ##########################################NEW MANUS EDIT ##########################################
+# name: Docker CI
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
+
+# jobs:
+#   build_and_test:
+#     runs-on: "ubuntu-latest"
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       # Needed for cargo-make
+#       - name: Set up Rust
+#         uses: dtolnay/rust-toolchain@stable
+
+#       - name: Install cargo make
+#         run: cargo install cargo-make
+
+#       - name: Get Sysbox
+#         run: wget https://downloads.nestybox.com/sysbox/releases/v0.6.1/sysbox-ce_0.6.1-0.linux_amd64.deb
+
+#       - name: Install Sysbox
+#         run: sudo apt-get update && sudo apt-get install -y ./sysbox-ce_0.6.1-0.linux_amd64.deb
+
+#       - name: Configure Sysbox runtime
+#         # Ensure the target directory exists
+#         run: sudo mkdir -p /etc/docker && sudo cp sysbox/daemon.json /etc/docker/daemon.json
+
+#       - name: Restart docker service
+#         run: sudo systemctl restart docker.service
+
+#       - name: Build docker image
+#         # Use direct docker build for clarity and tagging
+#         run: docker build -t zsolangpg .
+
+#       - name: Run docker container in detached mode
+#         # Run in detached mode (-d ) and publish port 4444
+#         run: docker run --runtime=sysbox-runc -d -p 4444:4444 -p 3000:3000 --name zsolangpg_backend zsolangpg
+
+#       # - name: Wait for backend server to be ready
+#       #   # Replace fixed sleep with an active check loop
+#       #   run: |
+#       #     echo "Waiting for backend server on http://localhost:4444 to be ready..."
+#       #     timeout=90 # Wait for up to 1.5 minutes
+#       #     start_time=$(date +%s )
+#       #     while true; do
+#       #       current_time=$(date +%s)
+#       #       elapsed_time=$((current_time - start_time))
+#       #       if [ $elapsed_time -ge $timeout ]; then
+#       #         echo "Timeout waiting for backend server."
+#       #         docker logs zsolangpg_backend # Show logs on timeout
+#       #         exit 1
+#       #       fi
+#       #       # Check if the server is responding on the root path (adjust if needed)
+#       #       if curl -sf http://localhost:4444/; then
+#       #         echo "Backend server is ready."
+#       #         break
+#       #       fi
+#       #       echo "Backend not ready yet, sleeping 5s..."
+#       #       sleep 5
+#       #     done
+
+#       # Docker Hub Push Steps (Conditional)
+#       - name: Log in to Docker Hub
+#         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+#         uses: docker/login-action@v3 # Use latest version
+#         with:
+#           username: ${{ secrets.DOCKERHUB_USERNAME }}
+#           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+#       - name: Tag Docker image for Docker Hub
+#         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+#         run: docker tag zsolangpg ahmadsamehh/zsolangpg:latest
+
+#       - name: Push Docker image to Docker Hub
+#         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+#         run: docker push ahmadsamehh/zsolangpg:latest
+
+
+#       # Needed to run tests - Ensure node_modules are available
+#       # Consider caching node_modules or running install if needed
+#       - name: Install npm dependencies (if not cached/included )
+#         # This assumes the test environment needs node_modules locally
+#         # If tests run inside the container, this step might differ
+#         run: cargo make deps-npm
+
+#       - name: Test application
+#         env:
+#           # Set the BACKEND_URL for the tests
+#           BACKEND_URL: http://localhost:4444
+#         run: cargo make test-app
+
+#       - name: Show container logs
+#         # Show logs regardless of test success/failure for debugging
+#         if: always( )
+#         run: docker logs zsolangpg_backend
+
+#________________________________________________LATEST EDIT______________________________________________________
+# name: Docker CI
 
 on:
   push:
@@ -111,34 +214,51 @@ jobs:
 
       - name: Build docker image
         # Use direct docker build for clarity and tagging
-        run: docker build -t zsolangpg .
+        # Use the Dockerfile with embedded entrypoint
+        run: docker build -t zsolangpg -f Dockerfile .
 
       - name: Run docker container in detached mode
-        # Run in detached mode (-d ) and publish port 4444
+        # Publish both port 4444 (backend) and 3000 (frontend)
         run: docker run --runtime=sysbox-runc -d -p 4444:4444 -p 3000:3000 --name zsolangpg_backend zsolangpg
 
-      # - name: Wait for backend server to be ready
-      #   # Replace fixed sleep with an active check loop
-      #   run: |
-      #     echo "Waiting for backend server on http://localhost:4444 to be ready..."
-      #     timeout=90 # Wait for up to 1.5 minutes
-      #     start_time=$(date +%s )
-      #     while true; do
-      #       current_time=$(date +%s)
-      #       elapsed_time=$((current_time - start_time))
-      #       if [ $elapsed_time -ge $timeout ]; then
-      #         echo "Timeout waiting for backend server."
-      #         docker logs zsolangpg_backend # Show logs on timeout
-      #         exit 1
-      #       fi
-      #       # Check if the server is responding on the root path (adjust if needed)
-      #       if curl -sf http://localhost:4444/; then
-      #         echo "Backend server is ready."
-      #         break
-      #       fi
-      #       echo "Backend not ready yet, sleeping 5s..."
-      #       sleep 5
-      #     done
+      - name: Download wait-for-it.sh
+        run: wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && chmod +x wait-for-it.sh
+
+      - name: Wait for backend server (port 4444)
+        run: |
+          echo "Waiting for backend server on localhost:4444..."
+          ./wait-for-it.sh localhost:4444 -t 180 -- echo "Backend server (4444) is up!"
+          if [ $? -ne 0 ]; then
+            echo "Timeout waiting for backend server (4444)."
+            docker logs zsolangpg_backend # Show logs on timeout
+            exit 1
+          fi
+
+      - name: Wait for frontend server (port 3000)
+        run: |
+          echo "Waiting for frontend server on localhost:3000..."
+          ./wait-for-it.sh localhost:3000 -t 180 -- echo "Frontend server (3000) is up!"
+          if [ $? -ne 0 ]; then
+            echo "Timeout waiting for frontend server (3000)."
+            docker logs zsolangpg_backend # Show logs on timeout
+            exit 1
+          fi
+
+      # Needed to run tests - Ensure node_modules are available
+      # This assumes tests run on the runner, not inside the container
+      - name: Install npm dependencies (for tests)
+        run: cargo make deps-npm
+
+      - name: Test application (API tests)
+        env:
+          # Set the BACKEND_URL for the tests
+          BACKEND_URL: http://localhost:4444
+        run: cargo make test-app
+
+      - name: Show container logs
+        # Show logs regardless of test success/failure for debugging
+        if: always()
+        run: docker logs zsolangpg_backend
 
       # Docker Hub Push Steps (Conditional)
       - name: Log in to Docker Hub
@@ -156,23 +276,3 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker push ahmadsamehh/zsolangpg:latest
 
-        
-      # Needed to run tests - Ensure node_modules are available
-      # Consider caching node_modules or running install if needed
-      - name: Install npm dependencies (if not cached/included )
-        # This assumes the test environment needs node_modules locally
-        # If tests run inside the container, this step might differ
-        run: cargo make deps-npm
-
-      - name: Test application
-        env:
-          # Set the BACKEND_URL for the tests
-          BACKEND_URL: http://localhost:4444
-        run: cargo make test-app
-
-      - name: Show container logs
-        # Show logs regardless of test success/failure for debugging
-        if: always( )
-        run: docker logs zsolangpg_backend
-
-      
