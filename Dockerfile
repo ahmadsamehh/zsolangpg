@@ -41,7 +41,12 @@ RUN cargo make build-server
 RUN cargo make build-bindings
 RUN cargo make build-app
 RUN cargo make build-backend
-
+# # RUN cargo make deps-wasm && \
+# #     cargo make deps-npm && \
+# #     cargo make build-server && \
+# #     cargo make build-bindings && \
+# #     cargo make build-app && \
+# #     cargo make build-backend
 
 # Final image
 
@@ -72,7 +77,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 WORKDIR /app
 
 # Copy the entire built application source (needed for cargo make run)
-COPY --from=builder /app /app
+COPY --from=builder /app/packages/app/dist /app/packages/app/dist
+COPY --from=builder /app/target/release/backend /usr/local/bin/backend
+# COPY --from=builder /app /app
 
 # Expose backend and frontend ports
 EXPOSE 4444
