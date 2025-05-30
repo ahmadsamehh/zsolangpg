@@ -14,7 +14,7 @@ npm install
 
 [tasks.deps-docker]
 script = '''
-ghcr.io/hyperledger-solang/solang:latest'''
+docker pull ghcr.io/hyperledger-solang/solang:latest'''
 
 [tasks.deps]
 dependencies = ["deps-wasm", "deps-npm", "deps-docker"]
@@ -30,14 +30,18 @@ script = '''
 cargo run -p generate-bindings -- --target $(pwd)/packages/_generated/commontypes/src
 '''
 
+# Note: build-app seems related to the wasm part, keeping it as is.
 [tasks.build-app]
 script = '''
 npm run build --workspace=packages/app
 '''
 
+# Updated: Build and export the static frontend
+# Assumes you have a script like "export": "next build && next export" in packages/frontend/package.json
+# The output will typically be in packages/frontend/out
 [tasks.build-frontend]
 script = '''
-npm run build --workspace=packages/frontend
+npm run export --workspace=packages/frontend
 '''
 
 [tasks.build-backend]
@@ -45,12 +49,13 @@ script = '''
 cargo build -p backend --release
 '''
 
+# Updated build dependencies
 [tasks.build]
 dependencies = [
 	"build-server",
 	"build-bindings",
-	"build-app",
-	"build-frontend",
+	"build-app",      # Keep if needed for wasm/other parts
+	"build-frontend", # Now builds and exports static site
 	"build-backend",
 ]
 
@@ -70,9 +75,11 @@ rm -rf packages/app/dist
 rm -rf packages/app/assets/wasm
 '''
 
+# Updated: Clean the Next.js build and export directories
 [tasks.clean-frontend]
 script = '''
 rm -rf packages/frontend/.next
+rm -rf packages/frontend/out
 '''
 
 [tasks.clean]
@@ -83,18 +90,22 @@ script = '''
 cargo +nightly fmt --all
 '''
 
+# Updated: Point to the expected static export output directory
+# This task is for local running, ensure the path matches local build output
 [tasks.run-server]
 script = '''
-./target/release/backend --frontend_folder packages/app/dist --port 4444
+./target/release/backend --frontend_folder packages/frontend/out --port 4444
 '''
 
-[tasks.run-frontend]
-script = '''
-npm run start --workspace=packages/frontend
-'''
+# Removed: No longer need to run the frontend dev server separately
+# [tasks.run-frontend]
+# script = '''
+# npm run start --workspace=packages/frontend
+# '''
 
+# Updated: Only run the server, as it serves the static frontend
 [tasks.run]
-run_task = { name = ["run-server", "run-frontend"], parallel = true }
+dependencies = ["run-server"]
 
 [tasks.test-backend]
 script = '''
@@ -134,3 +145,141 @@ docker run \
 script = '''
 docker logs playground
 '''
+
+
+# [config]
+# default_to_workspace = false
+# skip_core_tasks = true
+
+# [tasks.deps-wasm]
+# script = '''
+# cargo install wasm-bindgen-cli
+# '''
+
+# [tasks.deps-npm]
+# script = '''
+# npm install
+# '''
+
+# [tasks.deps-docker]
+# script = '''
+# docker pull ghcr.io/hyperledger-solang/solang:latest'''
+
+# [tasks.deps]
+# dependencies = ["deps-wasm", "deps-npm", "deps-docker"]
+
+# [tasks.build-server]
+# script = '''
+# cargo build --release --target wasm32-unknown-unknown
+# wasm-bindgen --out-dir ./packages/app/assets/wasm --target web --typescript ./target/wasm32-unknown-unknown/release/demo_lsp_browser.wasm
+# '''
+
+# [tasks.build-bindings]
+# script = '''
+# cargo run -p generate-bindings -- --target $(pwd)/packages/_generated/commontypes/src
+# '''
+
+# [tasks.build-app]
+# script = '''
+# npm run build --workspace=packages/app
+# '''
+
+# [tasks.build-frontend]
+# script = '''
+# npm run build --workspace=packages/frontend
+# '''
+
+# [tasks.build-backend]
+# script = '''
+# cargo build -p backend --release
+# '''
+
+# [tasks.build]
+# dependencies = [
+# 	"build-server",
+# 	"build-bindings",
+# 	"build-app",
+# 	"build-frontend",
+# 	"build-backend",
+# ]
+
+# [tasks.clean-server]
+# script = '''
+# cargo clean
+# '''
+
+# [tasks.clean-bindings]
+# script = '''
+# rm -rf packages/_generated/commontypes/src
+# '''
+
+# [tasks.clean-app]
+# script = '''
+# rm -rf packages/app/dist
+# rm -rf packages/app/assets/wasm
+# '''
+
+# [tasks.clean-frontend]
+# script = '''
+# rm -rf packages/frontend/.next
+# '''
+
+# [tasks.clean]
+# dependencies = ["clean-server", "clean-app", "clean-frontend"]
+
+# [tasks.format]
+# script = '''
+# cargo +nightly fmt --all
+# '''
+
+# [tasks.run-server]
+# script = '''
+# ./target/release/backend --frontend_folder packages/app/dist --port 4444
+# '''
+
+# [tasks.run-frontend]
+# script = '''
+# npm run start --workspace=packages/frontend
+# '''
+
+# [tasks.run]
+# run_task = { name = ["run-server", "run-frontend"], parallel = true }
+
+# [tasks.test-backend]
+# script = '''
+# cargo test
+# '''
+
+# [tasks.test-app]
+# script = '''
+# npm run test --workspace=packages/app
+# '''
+
+# [tasks.test-frontend]
+# script = '''
+# npm run test --workspace=packages/frontend
+# '''
+
+# [tasks.test]
+# dependencies = ["test-backend", "test-app", "test-frontend"]
+
+# [tasks.docker-build]
+# script = '''
+# docker build -t zsolangpg .
+# '''
+
+# [tasks.docker-run]
+# script = '''
+# docker run \
+# 	  --runtime=sysbox-runc \
+# 	  --name playground-makee \
+# 	  --detach \
+# 	  --volume /tmp:/tmp \
+# 	  --publish 4444:4444 \
+# 	  zsolangpg
+# '''
+
+# [tasks.docker-log]
+# script = '''
+# docker logs playground
+# '''
