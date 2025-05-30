@@ -64,7 +64,7 @@ WORKDIR /app
 # Copy necessary built artifacts from the builder stage
 COPY --from=builder /app/target/release/backend /app/backend
 # Updated: Copy the static export output from the frontend build
-COPY --from=builder /app/packages/frontend/out /app/frontend_dist # Copy static files to a dedicated dir
+COPY --from=builder /app/packages/frontend/out /app/frontend_dist 
 
 # Copy the startup script
 COPY sysbox/on-start.sh /usr/local/bin/on-start.sh
