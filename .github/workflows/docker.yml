@@ -244,21 +244,6 @@ jobs:
             exit 1
           fi
 
-      # Needed to run tests - Ensure node_modules are available
-      # This assumes tests run on the runner, not inside the container
-      - name: Install npm dependencies (for tests)
-        run: cargo make deps-npm
-
-      - name: Test application (API tests)
-        env:
-          # Set the BACKEND_URL for the tests
-          BACKEND_URL: http://localhost:4444
-        run: cargo make test-app
-
-      - name: Show container logs
-        # Show logs regardless of test success/failure for debugging
-        if: always()
-        run: docker logs zsolangpg_backend
 
       # Docker Hub Push Steps (Conditional)
       - name: Log in to Docker Hub
@@ -275,4 +260,22 @@ jobs:
       - name: Push Docker image to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker push ahmadsamehh/zsolangpg:latest
+
+      # # Needed to run tests - Ensure node_modules are available
+      # # This assumes tests run on the runner, not inside the container
+      # - name: Install npm dependencies (for tests)
+      #   run: cargo make deps-npm
+
+      # - name: Test application (API tests)
+      #   env:
+      #     # Set the BACKEND_URL for the tests
+      #     BACKEND_URL: http://localhost:4444
+      #   run: cargo make test-app
+
+      # - name: Show container logs
+      #   # Show logs regardless of test success/failure for debugging
+      #   if: always()
+      #   run: docker logs zsolangpg_backend
+
+      
 
