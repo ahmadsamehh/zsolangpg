@@ -191,6 +191,95 @@
 
 
 ##################################################MODIFIED DOCKERFILE##########################################################
+# # Start from a rust base image
+# #FROM rust:1.83.0 as base
+# FROM rust:1.77-bookworm as base
+
+# # Set the current directory
+# WORKDIR /app
+
+# # Copy everthing that is not dockerignored to the image
+# COPY . .
+
+# # Start from base image
+# FROM base as builder
+
+
+# # Install system dependencies
+# RUN apt-get update -y && \
+#     apt-get install -y pkg-config libssl-dev
+
+
+# RUN rustup update stable && \
+#     rustup default stable && \
+#     rustup target add wasm32-unknown-unknown
+
+# RUN cargo install cargo-make --locked
+# # Install Node in builder stage
+# RUN apt-get --yes update && apt-get --yes upgrade
+# ENV NVM_DIR /usr/local/nvm
+# ENV NODE_VERSION v18.16.1
+# RUN mkdir -p /usr/local/nvm && apt-get update && echo "y" | apt-get install curl
+# RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+# RUN /bin/bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm use --delete-prefix $NODE_VERSION"
+# ENV NODE_PATH $NVM_DIR/versions/node/$NODE_VERSION/bin
+# ENV PATH $NODE_PATH:$PATH
+
+# # Install dependencies
+# RUN cargo make deps-wasm
+# RUN cargo make deps-npm
+
+# # Build
+# RUN cargo make build-server
+# RUN cargo make build-bindings
+# RUN cargo make build-app
+# RUN cargo make build-backend
+
+
+# # Final image
+
+# # Start from a base image (comes with docker)
+# FROM nestybox/ubuntu-jammy-systemd-docker:latest
+
+# # Install dependencies needed for Rust, Node.js installation and runtime
+# RUN apt-get update && apt-get install -y curl build-essential pkg-config libssl-dev dos2unix && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# # Install Rust (including cargo)
+# ENV RUSTUP_HOME=/usr/local/rustup \
+#     CARGO_HOME=/usr/local/cargo \
+#     PATH=/usr/local/cargo/bin:$PATH
+# RUN curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+
+# # Install cargo-make
+# RUN cargo install cargo-make --locked
+
+# # Install Node.js and npm (using NodeSource)
+# # Match the version used in the builder stage (v18.x)
+# RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+#     apt-get update && apt-get install -y nodejs && \
+#     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# # Set working directory in final image
+# WORKDIR /app
+
+# # Copy built artifacts from builder
+# COPY --from=builder /app/packages/app/dist /app/packages/app/dist
+# COPY --from=builder /app/target/release/backend /usr/local/bin/backend
+
+# EXPOSE 4444
+
+
+
+# # Startup scripts: Copy script, ensure LF endings, and set permissions
+# COPY sysbox/on-start.sh /usr/bin/
+# RUN dos2unix /usr/bin/on-start.sh && chmod +x /usr/bin/on-start.sh
+
+# # Entrypoint (using the original script that calls cargo make run)
+# ENTRYPOINT [ "/usr/bin/on-start.sh" ]
+
+
+
+############################################################MODIFIED DOCKERFILE##########################################################
 # Start from a rust base image
 #FROM rust:1.83.0 as base
 FROM rust:1.77-bookworm as base
@@ -242,7 +331,8 @@ RUN cargo make build-backend
 FROM nestybox/ubuntu-jammy-systemd-docker:latest
 
 # Install dependencies needed for Rust, Node.js installation and runtime
-RUN apt-get update && apt-get install -y curl build-essential pkg-config libssl-dev dos2unix && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Removed dos2unix as we are not using the script anymore
+RUN apt-get update && apt-get install -y curl build-essential pkg-config libssl-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Rust (including cargo)
 ENV RUSTUP_HOME=/usr/local/rustup \
@@ -262,20 +352,14 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 # Set working directory in final image
 WORKDIR /app
 
-# Copy built artifacts from builder
-COPY --from=builder /app/packages/app/dist /app/packages/app/dist
-COPY --from=builder /app/target/release/backend /usr/local/bin/backend
+# Copy the entire built application source (needed for cargo make run)
+COPY --from=builder /app /app
 
 EXPOSE 4444
 
+# Removed script copy/permission steps
 
-
-# Startup scripts: Copy script, ensure LF endings, and set permissions
-COPY sysbox/on-start.sh /usr/bin/
-RUN dos2unix /usr/bin/on-start.sh && chmod +x /usr/bin/on-start.sh
-
-# Entrypoint (using the original script that calls cargo make run)
-ENTRYPOINT [ "/usr/bin/on-start.sh" ]
-
-
+# Entrypoint: Embed the startup logic directly using shell form
+# This avoids issues with script file formats (exec format error)
+ENTRYPOINT ["/bin/sh", "-c", "dockerd > /var/log/dockerd.log 2>&1 & sleep 3 && docker pull ghcr.io/hyperledger-solang/solang:latest && cargo make run"]
 
