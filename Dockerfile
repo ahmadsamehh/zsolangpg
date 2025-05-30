@@ -11,19 +11,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js using NVM (Use a version compatible with Next.js export, e.g., 18.x or 20.x)
+# Install Node.js using NVM (matching user's original approach)
 ENV NVM_DIR /usr/local/nvm
-ENV NODE_VERSION v20.14.0 # Keep consistent with previous version used
-# IMPORTANT: Install NVM and Node in the same RUN layer to ensure PATH is set for subsequent commands in this layer if needed
-# However, for subsequent RUN layers, we need to source nvm.sh explicitly.
+ENV NODE_VERSION v18.16.1
 RUN mkdir -p $NVM_DIR && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
-    # Source NVM for the current shell and install Node
-    . $NVM_DIR/nvm.sh && \
-    nvm install $NODE_VERSION && \
-    nvm use --delete-prefix $NODE_VERSION && \
-    nvm alias default $NODE_VERSION && \
-    nvm cache clear
+    /bin/bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm use --delete-prefix $NODE_VERSION && nvm alias default $NODE_VERSION && nvm cache clear"
+ENV NODE_PATH $NVM_DIR/versions/node/$NODE_VERSION/bin
+ENV PATH $NODE_PATH:$PATH
 
 # Set up Rust environment
 RUN rustup default stable && \
