@@ -14,11 +14,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Node.js using NVM (Use a version compatible with Next.js export, e.g., 18.x or 20.x)
 ENV NVM_DIR /usr/local/nvm
 ENV NODE_VERSION v20.14.0 # Keep consistent with previous version used
+# IMPORTANT: Install NVM and Node in the same RUN layer to ensure PATH is set for subsequent commands in this layer if needed
+# However, for subsequent RUN layers, we need to source nvm.sh explicitly.
 RUN mkdir -p $NVM_DIR && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
-    /bin/bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm use --delete-prefix $NODE_VERSION && nvm alias default $NODE_VERSION && nvm cache clear"
-ENV NODE_PATH $NVM_DIR/versions/node/$NODE_VERSION/bin
-ENV PATH $NODE_PATH:$PATH
+    # Source NVM for the current shell and install Node
+    . $NVM_DIR/nvm.sh && \
+    nvm install $NODE_VERSION && \
+    nvm use --delete-prefix $NODE_VERSION && \
+    nvm alias default $NODE_VERSION && \
+    nvm cache clear
 
 # Set up Rust environment
 RUN rustup default stable && \
@@ -31,15 +36,17 @@ RUN cargo install cargo-make --locked
 COPY . .
 
 # Install dependencies (npm and wasm)
-RUN cargo make deps-npm
+# Source NVM environment before running cargo make commands that use npm
+RUN bash -c "source $NVM_DIR/nvm.sh && cargo make deps-npm"
 RUN cargo make deps-wasm
 
 # Build the application
+# Source NVM environment before running cargo make commands that use npm
 # Ensure build-frontend runs `npm run export` successfully
 RUN cargo make build-server
 RUN cargo make build-bindings
-RUN cargo make build-app # Keep if needed for wasm/other parts
-RUN cargo make build-frontend # This now runs `npm run export`
+RUN bash -c "source $NVM_DIR/nvm.sh && cargo make build-app" # Keep if needed for wasm/other parts
+RUN bash -c "source $NVM_DIR/nvm.sh && cargo make build-frontend" # This now runs `npm run export`
 RUN cargo make build-backend
 
 # --- Optional: Debug listing --- 
@@ -62,7 +69,7 @@ WORKDIR /app
 # Copy necessary built artifacts from the builder stage
 COPY --from=builder /app/target/release/backend /app/backend
 # Updated: Copy the static export output from the frontend build
-COPY --from=builder /app/packages/frontend/out /app/frontend_dist 
+COPY --from=builder /app/packages/frontend/out /app/frontend_dist # Copy static files to a dedicated dir
 
 # Copy the startup script
 COPY sysbox/on-start.sh /usr/local/bin/on-start.sh
@@ -75,10 +82,6 @@ EXPOSE 4444
 
 # Set the entrypoint to the startup script (will be updated to just run backend)
 ENTRYPOINT ["/usr/local/bin/on-start.sh"]
-
-
-
-
 
 
 
