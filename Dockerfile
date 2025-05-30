@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Node.js using NVM (matching user's original approach)
 ENV NVM_DIR /usr/local/nvm
-ENV NODE_VERSION v18.16.1
+ENV NODE_VERSION v20.14.0
 RUN mkdir -p $NVM_DIR && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
     /bin/bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm use --delete-prefix $NODE_VERSION && nvm alias default $NODE_VERSION && nvm cache clear"
