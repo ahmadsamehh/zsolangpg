@@ -41,7 +41,7 @@ npm run build --workspace=packages/app
 # The output will typically be in packages/frontend/out
 [tasks.build-frontend]
 script = '''
-npm run export --workspace=packages/frontend
+npm run build --workspace=packages/frontend
 '''
 
 [tasks.build-backend]
