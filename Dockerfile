@@ -324,6 +324,11 @@ RUN cargo make build-bindings
 RUN cargo make build-app
 RUN cargo make build-backend
 
+# --- DEBUGGING STEP --- #
+# List the contents of the frontend directory AFTER the build steps
+RUN echo "--- Listing /app/packages/frontend/ contents after build --- " && ls -la /app/packages/frontend/
+# --- END DEBUGGING STEP --- #
+
 
 # Final image
 
