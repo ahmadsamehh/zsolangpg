@@ -111,17 +111,17 @@ jobs:
 
       - name: Build docker image
         # Use direct docker build for clarity and tagging
-        run: docker build -t solang-playground:latest .
+        run: docker build -t zsolangpg .
 
       - name: Run docker container in detached mode
         # Run in detached mode (-d ) and publish port 4444
-        run: docker run --runtime=sysbox-runc -d -p 4444:4444 --name zsolangpg_backend solang-playground:latest
+        run: docker run --runtime=sysbox-runc -d -p 4444:4444 -p 3000:3000 --name zsolangpg_backend zsolangpg
 
       - name: Wait for backend server to be ready
         # Replace fixed sleep with an active check loop
         run: |
           echo "Waiting for backend server on http://localhost:4444 to be ready..."
-          timeout=180 # Wait for up to 3 minutes
+          timeout=90 # Wait for up to 1.5 minutes
           start_time=$(date +%s )
           while true; do
             current_time=$(date +%s)
@@ -168,7 +168,7 @@ jobs:
 
       - name: Tag Docker image for Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: docker tag solang-playground:latest ahmadsamehh/zsolangpg:latest
+        run: docker tag zsolangpg ahmadsamehh/zsolangpg:latest
 
       - name: Push Docker image to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
