@@ -1,56 +1,3 @@
-#!/bin/bash
-
-# Start dockerd in the background
-echo "Starting Docker daemon..."
-dockerd > /var/log/dockerd.log 2>&1 &
-
-# Wait for the Docker socket to be available
-echo "Waiting for Docker daemon socket..."
-while [ ! -S /var/run/docker.sock ]; do
-  echo -n "."
-  sleep 1
-done
-echo " Docker socket found!"
-
-# Pull the required solang image
-echo "Pulling solang image..."
-docker pull ghcr.io/hyperledger-solang/solang:latest
-
-# Start the backend application in the foreground
-# It will serve the static frontend files copied to /app/frontend_dist
-echo "Starting backend server..."
-/app/backend --frontend_folder /app/frontend_dist --port 4444
-
-# The backend process runs in the foreground, keeping the container alive.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # #!/bin/bash
 
@@ -177,39 +124,39 @@ echo "Starting backend server..."
 # # # # # Ensure the path matches where it's copied in the Dockerfile
 # # # # /app/target/release/backend --frontend_folder /app/packages/app/dist --port 4444
 
-# # # #!/bin/bash
+#!/bin/bash
 
-# # # echo "--- Debugging Startup Script ---"
+echo "--- Debugging Startup Script ---"
 
-# # # echo "Current working directory:"
-# # # pwd
+echo "Current working directory:"
+pwd
 
-# # # echo "Listing files in current directory:"
-# # # ls -la
+echo "Listing files in current directory:"
+ls -la
 
-# # # echo "Listing files in /app directory:"
-# # # ls -la /app
+echo "Listing files in /app directory:"
+ls -la /app
 
-# # # echo "Changing directory to /app"
-# # # cd /app
+echo "Changing directory to /app"
+cd /app
 
-# # # echo "Current working directory after cd:"
-# # # pwd
+echo "Current working directory after cd:"
+pwd
 
-# # # echo "Listing files in /app directory again:"
-# # # ls -la
+echo "Listing files in /app directory again:"
+ls -la
 
-# # # echo "--- End Debugging --- Starting Original Script Logic ---"
+echo "--- End Debugging --- Starting Original Script Logic ---"
 
-# # # # dockerd start
-# # # dockerd > /var/log/dockerd.log 2>&1 &
-# # # sleep 3
+# dockerd start
+dockerd > /var/log/dockerd.log 2>&1 &
+sleep 3
 
-# # # # pull solang image
-# # # docker pull ghcr.io/hyperledger-solang/solang:latest
+# pull solang image
+docker pull ghcr.io/hyperledger-solang/solang:latest
 
-# # # echo "Attempting to run cargo make run from /app"
-# # # cargo make run
+echo "Attempting to run cargo make run from /app"
+cargo make run
 
-# # # echo "--- Script Finished ---"
+echo "--- Script Finished ---"
 
