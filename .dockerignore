@@ -1,6 +1,29 @@
-.github
-node_modules
-packages/*/node_modules
-docs
-target
-Dockerfile
+# .github
+# packages/*/node_modules
+# docs
+# target
+# Dockerfile
+
+
+# Ignore everything by default
+*
+
+# Allow specific files and directories
+!packages/
+!sysbox/
+!Cargo.toml
+!Cargo.lock
+!Makefile.toml
+!start-services.sh
+!on-start.sh
+!Dockerfile
+!crates/
+!crates/backend/
+!crates/frontend/
+
+
+# But ignore these within allowed directories
+packages/**/node_modules
+packages/**/dist
+packages/**/.next
+packages/**/target
