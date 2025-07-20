@@ -176,7 +176,7 @@
 #         run: docker logs zsolangpg_backend
 
 #________________________________________________LATEST EDIT______________________________________________________
-# name: Docker CI
+name: Docker CI
 
 on:
   push:
@@ -215,11 +215,11 @@ jobs:
       - name: Build docker image
         # Use direct docker build for clarity and tagging
         # Use the Dockerfile with embedded entrypoint
-        run: docker build -t zsolangpg -f Dockerfile .
+        run: docker build -t zsolangpg-githubbuildtest -f Dockerfile .
 
       - name: Run docker container in detached mode
         # Publish both port 4444 (backend) and 3000 (frontend)
-        run: docker run --runtime=sysbox-runc -d -p 4444:4444 -p 3000:3000 --name zsolangpg_backend zsolangpg
+        run: docker run --runtime=sysbox-runc -d -p 4444:4444 -p 3000:3000 --name zsolangpg_backend zsolangpg-githubbuildtest
 
       - name: Download wait-for-it.sh
         run: wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && chmod +x wait-for-it.sh
@@ -255,11 +255,11 @@ jobs:
 
       - name: Tag Docker image for Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: docker tag zsolangpg ahmadsamehh/zsolangpg:latest
+        run: docker tag zsolangpg-githubbuildtest ahmadsamehh/zsolangpg-githubbuildtest:latest
 
       - name: Push Docker image to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: docker push ahmadsamehh/zsolangpg:latest
+        run: docker push ahmadsamehh/zsolangpg-githubbuildtest:latest
 
       # # Needed to run tests - Ensure node_modules are available
       # # This assumes tests run on the runner, not inside the container
