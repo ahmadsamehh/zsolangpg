@@ -102,28 +102,41 @@ export default class App {
 
 
     // FIXME: There should be a way to load the initial code from a file. `fs` is not available in the browser.
-    const value =
-      `contract flipper {
-  bool private value;
+    //     const value =
+    //       `contract flipper {
+    //   bool private value;
 
-  /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
-  constructor(bool initvalue) {
-    value = initvalue;
-  }
+    //   /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
+    //   constructor(bool initvalue) {
+    //     value = initvalue;
+    //   }
 
-  /// A message that can be called on instantiated contracts.
-  /// This one flips the value of the stored \`bool\` from \`true\`
-  /// to \`false\` and vice versa.
-  function flip() public {
-    value = !value;
-  }
+    //   /// A message that can be called on instantiated contracts.
+    //   /// This one flips the value of the stored \`bool\` from \`true\`
+    //   /// to \`false\` and vice versa.
+    //   function flip() public {
+    //     value = !value;
+    //   }
 
-  /// Simply returns the current value of our \`bool\`.
-  function get() public view returns (bool) {
-    return value;
-  }
-}
-`;
+    //   /// Simply returns the current value of our \`bool\`.
+    //   function get() public view returns (bool) {
+    //     return value;
+    //   }
+    // }
+    // `;
+
+    const value = `contract counter_demo {
+
+
+    uint64 public count = 1;
+
+    function decrement() public returns (uint64){
+        count -= 1;
+        return count;
+    }
+
+
+}`;
 
 
     const id = language.id;

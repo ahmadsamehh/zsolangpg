@@ -3,14 +3,18 @@ use std::path::Path;
 use clap::Parser;
 
 use actix_files as fs;
+
 use actix_web::{
+    App, HttpResponse, HttpServer, Result,
     middleware::{self, DefaultHeaders},
     web,
     web::post,
-    App, HttpResponse, HttpServer, Result,
 };
 
-use backend::{route_compile, Opts};
+use backend::{Opts, route_compile};
+
+// Import Cors
+use actix_cors::Cors;
 
 pub struct FrontendState {
     pub frontend_folder: String,
@@ -49,8 +53,24 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let opts: Opts = opts.clone();
         let frontend_folder = opts.frontend_folder.clone();
+        // Define CORS configuration
+        // IMPORTANT: Adjust allowed_origin for production!
+        let cors = Cors::default()
+            .allow_any_header()
+            .allow_any_method()
+            .allow_any_origin()
+            .max_age(3600);
+        // .allowed_origin("http://localhost:3000") // Allow frontend dev server
+        // .allowed_origin("http://3.87.56.152:3000") // Allow your deployed backend (if frontend served from same origin)
+        // // Add your Vercel URL(s) here:
+        // .allowed_origin("https://your-project-name.vercel.app") // Replace with your actual Vercel URL
+        // // You might need allowed_origin_fn for dynamic origins or multiple Vercel previews
+        // .allowed_methods(vec!["GET", "POST"])
+        // .allowed_headers(vec![actix_web::http::header::AUTHORIZATION, actix_web::http::header::ACCEPT, actix_web::http::header::CONTENT_TYPE])
+        // .max_age(3600);
 
         let mut app = App::new()
+            .wrap(cors)
             .service(web::resource("/health").to(health))
             // Enable GZIP compression
             .wrap(middleware::Compress::default())
