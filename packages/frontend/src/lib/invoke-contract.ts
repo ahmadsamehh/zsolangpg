@@ -65,7 +65,7 @@ export async function invokeContract({
   // Simulate the transaction to check for potential issues
   try {
     const simulation = await server.simulateTransaction(transaction);
-    
+
     if ('error' in simulation) {
       throw new Error(`Simulation failed: ${JSON.stringify(simulation.error)}`);
     }
