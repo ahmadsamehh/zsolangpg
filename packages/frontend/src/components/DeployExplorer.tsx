@@ -69,7 +69,11 @@ function DeployExplorer() {
       const res = await compileFile();
       contract = res.data;
     }
+    // First log the contract data
+    console.log("[Debug] Contract data:", contract);
+
     const result = await deployWasm(contract);
+    console.log("[Debug] Deployment result:", result);
 
     // Add debugging logs
     console.log('[Debug] Deployment result:', result);

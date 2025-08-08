@@ -126,15 +126,19 @@ export async function buildAndSendTransaction(
 async function deployStellerContract(contract: Buffer, deployer: Keypair, network: Networks) {
   try {
     logger.info("Starting Contract Deployment to Steller Network...");
+    logger.info(`Deploying contract from buffer: ${contract}`);
     const server = new Server(networkRpc[network]);
     await server.requestAirdrop(deployer.publicKey());
     logger.info(`Got airdrop address: ${deployer.publicKey()}`);
     let uploadResponse = await uploadWasm(contract, deployer, network, server);
     const address = await deployContract(uploadResponse, deployer, network, server);
+    if (address) {
+      logger.info(`Contract deployed successfully at address: ${address}`);
+    }
 
     return address;
   } catch (error) {
-    console.error(error);
+    logger.error(`Error deploying contract: ${error}`);
   }
 }
 
