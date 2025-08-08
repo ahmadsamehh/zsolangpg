@@ -14,8 +14,8 @@ import { ChevronsLeftRightEllipsis } from "lucide-react";
 import { logger } from "@/state/utils";
 import { callContract } from "@/actions";
 import { networkRpc } from "@/lib/web3";
-import { Server } from "@stellar/stellar-sdk/rpc";
-import { Networks, scValToNative, xdr, rpc } from "@stellar/stellar-sdk";
+// import { Server } from "@stellar/stellar-sdk/rpc";
+import Server, { Networks, scValToNative, xdr } from "@stellar/stellar-sdk";
 import { withError } from "@/lib/action-util";
 import Spinner from "./Spinner";
 
@@ -106,12 +106,12 @@ function InvokeFunction({ contractAddress, method }: { contractAddress: string, 
 
       const logs =
         response.diagnosticEventsXdr
-          ?.map((eventXdr) => {
+          ?.map((eventXdr: xdr.DiagnosticEvent) => {
             const diagnosticEvent = eventXdr;
             const contractEvent = diagnosticEvent.event();
             const eventBody = contractEvent.body().v0();
             const data = scValToNative(eventBody.data());
-            const topics = eventBody.topics().map((topic) => scValToNative(topic));
+            const topics = eventBody.topics().map((topic: xdr.ScVal) => scValToNative(topic));
 
             if (topics.includes("log")) {
               try {
@@ -168,7 +168,7 @@ function InvokeFunction({ contractAddress, method }: { contractAddress: string, 
       </Dialog>
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="outline" key={method.name} className="w-full text-left justify-start items-center btn-custom-invoke" style={{marginTop: '2px'}}>
+          <Button variant="outline" key={method.name} className="w-full text-left justify-start items-center btn-custom-invoke" style={{ marginTop: '2px' }}>
             <span>{method.name}</span>
             {invkRetVal && (<span>{invkRetVal}</span>)}
             <ChevronsLeftRightEllipsis className="ml-auto" />

@@ -71,20 +71,32 @@ function DeployExplorer() {
     }
     const result = await deployWasm(contract);
 
-    // If deployment was successful, wait briefly then show the functions
+    // Add debugging logs
+    console.log('[Debug] Deployment result:', result);
+    console.log('[Debug] Deployed contracts:', deployed);
+    console.log('[Debug] Keys:', Object.keys(deployed));
+
     if (result) {
-      // Give time for the state to update
+      // Increase timeout and add more logging
       setTimeout(() => {
-        // Show the functions for the newly deployed contract
         const deployedKeys = Object.keys(deployed);
+        console.log('[Debug] Deployed keys after timeout:', deployedKeys);
+
         if (deployedKeys.length > 0) {
           const lastDeployed = deployedKeys[deployedKeys.length - 1];
+          console.log('[Debug] Looking for element with ID:', lastDeployed);
+
           const element = document.querySelector(`[data-contract-id="${lastDeployed}"]`);
+          console.log('[Debug] Found element:', element);
+
           if (element) {
             (element as HTMLElement).style.display = 'block';
           }
         }
-      }, 1000);
+      }, 2000); // Increased timeout to 2 seconds
+    } else {
+      console.error('[tur] Deployment failed');
+      console.log('[tur] Deployed:', deployed);
     }
   }
 
