@@ -38,7 +38,8 @@ COPY packages/frontend/package.json packages/frontend/package-lock.json ./packag
 RUN . $NVM_DIR/nvm.sh && \
     nvm use $NODE_VERSION && \
     cd packages/frontend && \
-    npm ci
+    npm install --include=dev && \
+    npm ls @stellar/stellar-sdk
 
 # Copy the rest of the source code
 COPY . .
