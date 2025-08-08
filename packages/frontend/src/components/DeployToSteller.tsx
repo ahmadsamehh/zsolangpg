@@ -36,10 +36,24 @@ function DeployToSteller() {
     setOpen(false);
     toast.loading("Deploying contract...", { id: toastId });
     const idl = await generateIdl(contract);
+    // First update the methods
     store.send({ type: "updateContract", methods: idl });
+
+    // Then deploy and update with address
     const contractAddress = await deployStellerContract(contract, keypair, network);
-    toast.success("Contract deployed successfully", { id: toastId });
-    contractAddress && store.send({ type: "updateContract", address: contractAddress });
+    if (contractAddress) {
+      // Update both address and methods to ensure they're properly linked
+      store.send({
+        type: "updateContract",
+        address: contractAddress,
+        deployed: {
+          [contractAddress]: idl
+        }
+      });
+      toast.success("Contract deployed successfully", { id: toastId });
+    } else {
+      toast.error("Contract deployment failed", { id: toastId });
+    }
   }
 
   async function handleContractUpload(event: ChangeEvent<HTMLInputElement>) {

@@ -37,7 +37,7 @@ export const events = {
       }
     }
   },
-  addDeployedContract(context: Context, event: { basePath: string; name: string, contract: any }) {},
+  addDeployedContract(context: Context, event: { basePath: string; name: string, contract: any }) { },
   addFile(context: Context, event: { basePath: string; name: string; content: string }) {
     const path = createPath(event.basePath, event.name);
     const file = {
@@ -135,13 +135,29 @@ export const events = {
   // },
   updateContract(context: Context, event: Partial<Contract>) {
     const addr = event.address;
-    if(addr && Object.keys(context.contract.deployed).indexOf(addr || '') == -1) {
-      context.contract.deployed[addr] = context.contract.methods
+
+    // Update deployed contracts if we have both an address and methods
+    if (addr) {
+      if (event.deployed) {
+        // If explicit deployed mapping is provided, use it
+        context.contract.deployed = {
+          ...context.contract.deployed,
+          ...event.deployed
+        };
+      } else if (context.contract.methods && Object.keys(context.contract.deployed).indexOf(addr) === -1) {
+        // Otherwise, use current methods if available
+        context.contract.deployed = {
+          ...context.contract.deployed,
+          [addr]: context.contract.methods
+        };
+      }
     }
+
+    // Update other contract properties
     Object.assign(context.contract, event);
   },
 
-  deleteDeployed(context: Context, event: {addr: string}) {
+  deleteDeployed(context: Context, event: { addr: string }) {
     console.log('[tur] remove deployed:', event.addr);
     const copy = { ...context.contract.deployed };
     console.log('[tur] copy:', copy, copy[event.addr]);
@@ -150,12 +166,12 @@ export const events = {
     context.contract.deployed = copy;
 
   },
-  
+
   addCompiled(context: Context, event: Partial<ICompiled>) {
     const d = {} as ICompiled;
     Object.assign(d, event);
     const x = context.compiled.filter(c => c.path == event.path);
-    if(x.length == 0) context.compiled.push(d);
+    if (x.length == 0) context.compiled.push(d);
   },
 
   updateCurrentWasm(context: Context, event: Partial<ICurrentWasm>) {

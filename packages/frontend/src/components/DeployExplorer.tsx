@@ -12,9 +12,9 @@ import { ArchiveX, ChevronDownIcon, Copy, LucideDelete } from "lucide-react";
 import useCompile from "@/hooks/useCompile";
 
 function DeployExplorer() {
-  const {compileFile} = useCompile();
-  
-  const {deployWasm} = useDeploy();
+  const { compileFile } = useCompile();
+
+  const { deployWasm } = useDeploy();
   const currFileTabSelected = useSelector(store, (state) => state.context.currentFile);
   const compiled = useSelector(store, (state) => state.context.compiled);
   const currWasm = useSelector(store, (state) => state.context.currentWasm);
@@ -27,7 +27,7 @@ function DeployExplorer() {
     console.log('[tur] current file tab:', currFileTabSelected)
     currFileTabSelected && setSelected(currFileTabSelected || '')
   }, [currFileTabSelected])
-  
+
   useEffect(() => {
     console.log('[tur] compiled updated:', compiled)
   }, [compiled])
@@ -65,15 +65,27 @@ function DeployExplorer() {
 
   const handleDeploy = async () => {
     let contract: Buffer | null = null;
-    console.log('[tur] selected path', selected)
-    console.log('[tur] curr wasm path', currWasm.path)
-    if(selected.indexOf(currWasm.path) == -1) {
-      console.log('[tur] so compiling..')
+    if (selected.indexOf(currWasm.path) === -1) {
       const res = await compileFile();
       contract = res.data;
     }
-    const result = await deployWasm(contract)
-    console.log('[tur] deployed?', result)
+    const result = await deployWasm(contract);
+
+    // If deployment was successful, wait briefly then show the functions
+    if (result) {
+      // Give time for the state to update
+      setTimeout(() => {
+        // Show the functions for the newly deployed contract
+        const deployedKeys = Object.keys(deployed);
+        if (deployedKeys.length > 0) {
+          const lastDeployed = deployedKeys[deployedKeys.length - 1];
+          const element = document.querySelector(`[data-contract-id="${lastDeployed}"]`);
+          if (element) {
+            (element as HTMLElement).style.display = 'block';
+          }
+        }
+      }, 1000);
+    }
   }
 
   const handleCopy = async (text: string) => {
@@ -89,7 +101,7 @@ function DeployExplorer() {
 
   const handleRemoveDeployed = async (k: string) => {
     console.log('[tur] keys:', keys)
-    store.send({ type: 'deleteDeployed', addr: k})
+    store.send({ type: 'deleteDeployed', addr: k })
   }
 
   return (
@@ -99,8 +111,8 @@ function DeployExplorer() {
       </div>
       <div className="mt-10 relative z-10 px-3 overflow-x-clip">
         <div>
-          <div style={{marginBottom: '1rem'}}>
-            <p style={{marginBottom: '1rem'}}>CONTRACTS</p>
+          <div style={{ marginBottom: '1rem' }}>
+            <p style={{ marginBottom: '1rem' }}>CONTRACTS</p>
             <select
               disabled={compiled.length == 0}
               value={selected}
@@ -116,7 +128,7 @@ function DeployExplorer() {
                 <option key={`${c.path}__${i}`} value={c.path} style={{ backgroundColor: 'hsl(var(--card))' }}>{c.name}</option>
               ))}
             </select>
-            
+
           </div>
         </div>
         <div className="relative inline-block w-48">
@@ -131,32 +143,32 @@ function DeployExplorer() {
             </Button>
           </div>
         </div>
-        {keys.length ? <p style={{marginTop: '1rem', marginBottom: '1rem'}}>DEPLOYED</p> : <></>}
+        {keys.length ? <p style={{ marginTop: '1rem', marginBottom: '1rem' }}>DEPLOYED</p> : <></>}
         <div className="flex flex-col gap-2">
           {
             keys.map(k => (
-            <div key={k}>
-              <p
-                key={k}
-                style={{display: 'flex', justifyContent: 'space-between'}}
-              >
-                <span style={{cursor: 'pointer'}} onClick={e => toggleCollapsed(e, k)}>
-                  {`${k.substring(0, 5)}..${k.substring(50)}`}
-                </span>
-                <Copy style={{cursor: 'pointer'}} size={16} onClick={e => handleCopy(k)} />
-                {/* {copied && <span style={{ color: "green" }}>Copied!</span>} */}
-                <ArchiveX style={{cursor: 'pointer'}} size={16} onClick={e => handleRemoveDeployed(k)}/>                
-              </p>
-              <div key={k} style={{display: 'none'}}>
-                { 
-                  deployed[k] && deployed[k].map(item => (
-                    <InvokeFunction contractAddress={k} key={item.name} method={item} />
-                  ))
-                }
+              <div key={k}>
+                <p
+                  key={k}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
+                >
+                  <span style={{ cursor: 'pointer' }} onClick={e => toggleCollapsed(e, k)}>
+                    {`${k.substring(0, 5)}..${k.substring(50)}`}
+                  </span>
+                  <Copy style={{ cursor: 'pointer' }} size={16} onClick={e => handleCopy(k)} />
+                  {/* {copied && <span style={{ color: "green" }}>Copied!</span>} */}
+                  <ArchiveX style={{ cursor: 'pointer' }} size={16} onClick={e => handleRemoveDeployed(k)} />
+                </p>
+                <div key={k} style={{ display: 'none' }} data-contract-id={k}>
+                  {
+                    deployed[k] && deployed[k].map(item => (
+                      <InvokeFunction contractAddress={k} key={item.name} method={item} />
+                    ))
+                  }
+                </div>
               </div>
-            </div>
             )
-          )
+            )
           }
         </div>
 
