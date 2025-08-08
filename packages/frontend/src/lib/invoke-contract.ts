@@ -1,6 +1,6 @@
-import { BASE_FEE, Contract, Keypair, nativeToScVal, Networks, TransactionBuilder } from "@stellar/stellar-sdk";
-import { networkRpc } from "./web3";
+import { BASE_FEE, Contract, Keypair, Networks, TransactionBuilder, nativeToScVal } from "@stellar/stellar-sdk";
 import { Server } from "@stellar/stellar-sdk/rpc";
+import { networkRpc } from "./web3";
 import { isValidJSON } from "./utils";
 
 function buildOperation({
@@ -65,16 +65,32 @@ export async function invokeContract({
   // Simulate the transaction to check for potential issues
   try {
     const simulation = await server.simulateTransaction(transaction);
+    
     if ('error' in simulation) {
       throw new Error(`Simulation failed: ${JSON.stringify(simulation.error)}`);
     }
+
+    // Set minimum fee from simulation if available
+    if ('minResourceFee' in simulation) {
+      const minFee = parseInt(simulation.minResourceFee);
+      const baseFee = parseInt(BASE_FEE);
+      if (!isNaN(minFee) && !isNaN(baseFee)) {
+        transaction.fee = minFee > baseFee ? minFee.toString() : BASE_FEE;
+      }
+    }
+
   } catch (e) {
     console.error("Transaction simulation failed:", e);
     throw e;
   }
 
+  // Prepare the transaction
   const preparedTx = await server.prepareTransaction(transaction);
+
+  // Add the signature
   preparedTx.sign(sourceKeypair);
+
+  // Send the transaction
   const txResult = await server.sendTransaction(preparedTx);
   return txResult;
 }

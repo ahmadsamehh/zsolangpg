@@ -1,5 +1,6 @@
 import { logger } from "@/state/utils";
 import { signTransaction } from "@stellar/freighter-api";
+import { Server } from "@stellar/stellar-sdk/rpc";
 import {
   Account,
   Address,
@@ -7,7 +8,6 @@ import {
   Keypair,
   Networks,
   Operation,
-  rpc,
   StrKey,
   Transaction,
   TransactionBuilder,
@@ -20,36 +20,63 @@ export function xdrToTransaction(signedTxXdr: string, networkPassphrase: string)
   return tx;
 }
 
-async function uploadWasm(contract: Buffer, deployer: Keypair, network: Networks, server: rpc.Server) {
+async function uploadWasm(contract: Buffer, deployer: Keypair, network: Networks, server: Server) {
   const account = await server.getAccount(deployer.publicKey());
   const operation = Operation.uploadContractWasm({ wasm: contract });
   return await buildAndSendTransaction(account, operation, network, server, deployer);
 }
 async function deployContract(
-  response: rpc.Api.GetSuccessfulTransactionResponse,
+  response: any,
   deployer: Keypair,
   network: Networks,
-  server: rpc.Server,
+  server: Server,
 ) {
   const account = await server.getAccount(deployer.publicKey());
+  // Extract hash from response
+  const wasmHash = response?.returnValue?.xdr?.wasmHash?.toString('base64');
+  if (!wasmHash) {
+    throw new Error('Failed to get wasm hash from upload response');
+  }
+
   const operation = Operation.createCustomContract({
-    wasmHash: response?.returnValue?.bytes() as any,
+    wasmHash: Buffer.from(wasmHash, 'base64'),
     address: Address.fromString(deployer.publicKey()),
-    // @ts-ignore
-    salt: response?.hash as any,
+    salt: Buffer.from(response?.hash || '', 'hex')
   });
+
   const responseDeploy = await buildAndSendTransaction(account, operation, network, server, deployer);
-  const contractAddress = StrKey.encodeContract(
-    Address.fromScAddress(responseDeploy?.returnValue?.address?.() as any).toBuffer(),
-  );
-  
+
+  // Extract contract ID from response and encode it
+  if (!responseDeploy?.returnValue) {
+    throw new Error('Failed to get deploy response');
+  }
+
+  let contractAddress: string;
+  try {
+    // In v14, we need to handle the ScVal directly
+    const scAddress = responseDeploy.returnValue.value() as xdr.ScAddress;
+    const contractIdHash = scAddress.contractId();
+
+    // Convert the Hash directly to bytes array
+    const contractIdArray = Array.from(contractIdHash).map(Number);
+    const contractIdBuffer = Buffer.from(contractIdArray);
+
+    // Encode the contract address
+    contractAddress = StrKey.encodeContract(contractIdBuffer);
+  } catch (error) {
+    console.error('Error extracting contract address:', error);
+    throw new Error('Failed to extract contract address from response');
+  }
+
   return contractAddress;
+
+
 }
 export async function buildAndSendTransaction(
   account: Account,
   operations: xdr.Operation,
   network: Networks,
-  server: rpc.Server,
+  server: Server,
   deployer: Keypair,
 ) {
   const transaction = new TransactionBuilder(account, {
@@ -60,12 +87,18 @@ export async function buildAndSendTransaction(
     .setTimeout(30)
     .build();
 
-  const signedTx = await server.prepareTransaction(transaction);
-  signedTx.sign(deployer);
+  // Simulate the transaction first
+  const simulation = await server.simulateTransaction(transaction);
+  if ('error' in simulation) {
+    throw new Error(`Simulation failed: ${JSON.stringify(simulation.error)}`);
+  }
+
+  // Prepare and sign the transaction
+  const preparedTx = await server.prepareTransaction(transaction);
+  preparedTx.sign(deployer);
 
   logger.info("Submitting transaction...");
-  // const signedTx = xdrToTransaction(signedTxXdr, network);
-  let response = await server.sendTransaction(signedTx);
+  let response = await server.sendTransaction(preparedTx);
 
   const hash = response.hash;
   logger.info(`Transaction hash: ${hash}`);
@@ -93,7 +126,7 @@ export async function buildAndSendTransaction(
 async function deployStellerContract(contract: Buffer, deployer: Keypair, network: Networks) {
   try {
     logger.info("Starting Contract Deployment to Steller Network...");
-    const server = new rpc.Server(networkRpc[network]);
+    const server = new Server(networkRpc[network]);
     await server.requestAirdrop(deployer.publicKey());
     logger.info(`Got airdrop address: ${deployer.publicKey()}`);
     let uploadResponse = await uploadWasm(contract, deployer, network, server);
