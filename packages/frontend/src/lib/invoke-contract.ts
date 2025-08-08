@@ -53,13 +53,25 @@ export async function invokeContract({
   await server.requestAirdrop(sourcePublicKey);
   const sourceAccount = await server.getAccount(sourcePublicKey);
   const operation = buildOperation({ contractId, method, args });
+  // Build the initial transaction
   const transaction = new TransactionBuilder(sourceAccount, {
     fee: BASE_FEE,
-    networkPassphrase: Networks.TESTNET,
+    networkPassphrase: Networks.TESTNET
   })
     .addOperation(operation)
     .setTimeout(30)
     .build();
+
+  // Simulate the transaction to check for potential issues
+  try {
+    const simulation = await server.simulateTransaction(transaction);
+    if ('error' in simulation) {
+      throw new Error(`Simulation failed: ${JSON.stringify(simulation.error)}`);
+    }
+  } catch (e) {
+    console.error("Transaction simulation failed:", e);
+    throw e;
+  }
 
   const preparedTx = await server.prepareTransaction(transaction);
   preparedTx.sign(sourceKeypair);
