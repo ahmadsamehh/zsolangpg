@@ -91,6 +91,10 @@ export async function invokeContract({
   preparedTx.sign(sourceKeypair);
 
   // Send the transaction
-  const txResult = await server.sendTransaction(preparedTx);
+
+
+  // const txResult = await server.sendTransaction(preparedTx);
+  //ahmadsamehs edit to match v14
+  const txResult = await server.sendTransaction(transaction);
   return txResult;
 }
