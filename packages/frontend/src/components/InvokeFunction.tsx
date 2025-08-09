@@ -18,7 +18,6 @@ import { networkRpc } from "@/lib/web3";
 import Server, { Networks, scValToNative, xdr } from "@stellar/stellar-sdk";
 import { withError } from "@/lib/action-util";
 import Spinner from "./Spinner";
-import { error } from "console";
 
 function transformValue(type: string, value: any) {
   switch (type) {
@@ -143,7 +142,7 @@ function InvokeFunction({ contractAddress, method }: { contractAddress: string, 
         toast.success(`Function invoked successfully`, { id: toastId });
         return response;
       } else {
-        logger.error("Transaction failed.", error);
+        logger.error("Transaction failed.");
         logger.info(`TxId: ${result.hash}`);
         toast.error(`Transaction failed`, { id: toastId });
         throw new Error("Transaction failed");
