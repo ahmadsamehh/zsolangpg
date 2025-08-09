@@ -14,6 +14,7 @@ import {
   xdr,
 } from "@stellar/stellar-sdk";
 import { networkRpc } from "./web3";
+import { stat } from "fs";
 
 export function xdrToTransaction(signedTxXdr: string, networkPassphrase: string) {
   const tx = new Transaction(signedTxXdr, networkPassphrase);
@@ -109,28 +110,90 @@ export async function buildAndSendTransaction(
   logger.info("Submitting transaction...");
   // let response = await server.sendTransaction(preparedTx);
   let response = await server.sendTransaction(transaction);
+  if (response.errorResult) {
+    logger.error("Transaction failed.", response.errorResult);
+    return;
+  }
   logger.info(`Transaction response: ${response}`);
+
+
+
+
+  /////////updates to match V14
+  //const hash = response.hash;
+  // In SDK v14, the hash is in the response.transactionResult or response.id
   const hash = response.hash;
   logger.info(`Transaction hash: ${hash}`);
   logger.info("Awaiting confirmation...");
 
+
   let getResponse;
 
-  while (true) {
+  // while (true) {
+  //   getResponse = await server.getTransaction(hash);
+  //   if (getResponse.status !== "NOT_FOUND") {
+  //     break;
+  //   }
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  // }
+  for (let i = 0; i < 10; i++) {
     getResponse = await server.getTransaction(hash);
     if (getResponse.status !== "NOT_FOUND") {
       break;
     }
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-
-  if (getResponse.status === "SUCCESS") {
+  if (getResponse?.status === "SUCCESS") {
     logger.info("Transaction successful.");
     return getResponse;
   } else {
     logger.info("Transaction failed.");
     throw new Error("Transaction failed");
   }
+
+
+
+  // let getResponse;
+
+  // // Set a maximum timeout in case it never confirms
+  // let attempts = 0;
+  // const maxAttempts = 30; // 30 seconds timeout
+
+  // while (attempts < maxAttempts) {
+  //   attempts++;
+  //   try {
+  //     getResponse = await server.getTransaction(hash);
+  //     if (getResponse.status !== "NOT_FOUND") {
+  //       break;
+  //     }
+  //   } catch (error) {
+  //     // If there's an error getting the transaction, wait and try again
+  //     logger.info(`Waiting for confirmation... (<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi>a</mi><mi>t</mi><mi>t</mi><mi>e</mi><mi>m</mi><mi>p</mi><mi>t</mi><mi>s</mi></mrow><mi mathvariant="normal">/</mi></mrow><annotation encoding="application/x-tex">{attempts}/</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="mord mathnormal">tt</span><span class="mord mathnormal">e</span><span class="mord mathnormal">m</span><span class="mord mathnormal">pt</span><span class="mord mathnormal">s</span></span><span class="mord">/</span></span></span></span>{maxAttempts})`);
+  //   }
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  // }
+
+  // // Check if we have a response
+  // if (!getResponse || attempts >= maxAttempts) {
+  //   logger.info("Transaction confirmation timed out.");
+  //   // Return response anyway to allow processing to continue
+  //   return response;
+  // }
+
+  // if (getResponse.status === "SUCCESS") {
+  //   logger.info("Transaction successful.");
+  //   return getResponse;
+  // } else {
+  //   logger.info("Transaction failed.");
+  //   throw new Error("Transaction failed");
+  // }
+
+
+
+
+
+
+
 }
 
 async function deployStellerContract(contract: Buffer, deployer: Keypair, network: Networks) {
