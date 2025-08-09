@@ -9,7 +9,7 @@ export default async function generateIdl(contract: Uint8Array) {
     logger.info("IDL generated successfully");
     return parsedIdl;
   } catch (error: any) {
-    logger.error("Error generating IDL: " + error?.message);
+    logger.error("Error generating IDL: ", error?.message);
     return [];
   }
 }

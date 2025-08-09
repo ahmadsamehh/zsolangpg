@@ -49,7 +49,7 @@ function Folder({ path, basePath }: { path: string; basePath: string }) {
     });
 
     const files = (await Promise.all(readFiles).catch(() => {
-      logger.error("Error reading files");
+      logger.info("Error reading files");
       return [];
     })) as any;
 
@@ -96,7 +96,7 @@ function Folder({ path, basePath }: { path: string; basePath: string }) {
         </div>
 
         <Hide open={!editing}>
-          <ParentContext.Provider value={{ path, basePath: path, name, editing, setEditing, confirmEdit: () => {} }}>
+          <ParentContext.Provider value={{ path, basePath: path, name, editing, setEditing, confirmEdit: () => { } }}>
             <FolderActions />
           </ParentContext.Provider>
         </Hide>

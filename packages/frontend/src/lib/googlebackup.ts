@@ -19,7 +19,7 @@ async function createGoogleFolder(accessToken: string, folderName: string, paren
   console.log(response);
 
   if (!response.ok) {
-    logger.error(`Failed to Create FOLDER: ${folderName}`);
+    logger.info(`Failed to Create FOLDER: ${folderName}`);
     throw new Error("Failed to create folder");
   }
 
@@ -61,7 +61,7 @@ async function createGoogleFile({
   });
 
   if (!response.ok) {
-    logger.error(`Failed to Create FILE: ${name}`);
+    logger.info(`Failed to Create FILE: ${name}`);
     return false;
   }
   const data = await response.json();
