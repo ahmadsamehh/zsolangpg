@@ -35,6 +35,7 @@ async function deployContract(
   // Extract hash from response
   const wasmHash = response?.returnValue?.xdr?.wasmHash?.toString('base64');
   if (!wasmHash) {
+    logger.info("Failed to get wasm hash from upload response");
     throw new Error('Failed to get wasm hash from upload response');
   }
 
@@ -48,6 +49,7 @@ async function deployContract(
 
   // Extract contract ID from response and encode it
   if (!responseDeploy?.returnValue) {
+    logger.info("Failed to get deploy response");
     throw new Error('Failed to get deploy response');
   }
 
@@ -64,6 +66,7 @@ async function deployContract(
     // Encode the contract address
     contractAddress = StrKey.encodeContract(contractIdBuffer);
   } catch (error) {
+    logger.error("Error extracting contract address from response:", error);
     console.error('Error extracting contract address:', error);
     throw new Error('Failed to extract contract address from response');
   }
@@ -93,13 +96,20 @@ export async function buildAndSendTransaction(
     throw new Error(`Simulation failed: ${JSON.stringify(simulation.error)}`);
   }
 
-  // Prepare and sign the transaction
-  const preparedTx = await server.prepareTransaction(transaction);
-  preparedTx.sign(deployer);
+
+
+  //Ahmads edit to match v14
+  // // Prepare and sign the transaction
+  // const preparedTx = await server.prepareTransaction(transaction);
+  // preparedTx.sign(deployer);
+
+
+  transaction.sign(deployer);
 
   logger.info("Submitting transaction...");
-  let response = await server.sendTransaction(preparedTx);
-
+  // let response = await server.sendTransaction(preparedTx);
+  let response = await server.sendTransaction(transaction);
+  logger.info(`Transaction response: ${response}`);
   const hash = response.hash;
   logger.info(`Transaction hash: ${hash}`);
   logger.info("Awaiting confirmation...");
@@ -118,7 +128,7 @@ export async function buildAndSendTransaction(
     logger.info("Transaction successful.");
     return getResponse;
   } else {
-    logger.error("Transaction failed.");
+    logger.info("Transaction failed.");
     throw new Error("Transaction failed");
   }
 }
@@ -138,7 +148,7 @@ async function deployStellerContract(contract: Buffer, deployer: Keypair, networ
 
     return address;
   } catch (error) {
-    logger.error(`Error deploying contract: ${error}`);
+    logger.error(`Error deploying contract: ${error}`, error);
   }
 }
 

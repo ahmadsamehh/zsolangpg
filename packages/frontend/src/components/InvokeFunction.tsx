@@ -142,7 +142,7 @@ function InvokeFunction({ contractAddress, method }: { contractAddress: string, 
         toast.success(`Function invoked successfully`, { id: toastId });
         return response;
       } else {
-        logger.error("Transaction failed.");
+        logger.info("Transaction failed.");
         logger.info(`TxId: ${result.hash}`);
         toast.error(`Transaction failed`, { id: toastId });
         throw new Error("Transaction failed");

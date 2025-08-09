@@ -75,8 +75,7 @@ function DeployExplorer() {
     const result = await deployWasm(contract);
     console.log("[Debug] Deployment result:", result);
 
-    // Add debugging logs
-    console.log('[Debug] Deployment result:', result);
+
     console.log('[Debug] Deployed contracts:', deployed);
     console.log('[Debug] Keys:', Object.keys(deployed));
 

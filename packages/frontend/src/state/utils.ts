@@ -6,7 +6,7 @@ export function createPath(basePath: string, name: string) {
 }
 
 export const logger = {
-  error(message: string) {
+  error(message: string, error: unknown) {
     store.send({ type: "addLog", logType: MessageType.Error, message });
   },
   info(message: string) {
