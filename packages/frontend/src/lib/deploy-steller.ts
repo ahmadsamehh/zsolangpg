@@ -149,9 +149,11 @@ export async function buildAndSendTransaction(
   if (response.status === "ERROR" && response.errorResult) {
     // The 'result' xdr contains the detailed reason for the failure.
     const errorDetails = response.errorResult.result;
-    logger.error("Transaction failed with details:", JSON.stringify(errorDetails, null, 2));
-    console.error("Transaction failed with details:", JSON.stringify(errorDetails, null, 2));
-    console.error("Transaction failed with details:", errorDetails.toString());
+    logger.error("Transaction failed with details:", errorDetails);
+    console.error("Transaction failed with whole details:", errorDetails);
+    console.error("Transaction failed <<<<Response>>>>:", response);
+    console.error("Transaction failed with details to string:", errorDetails.toString());
+    console.error("Transaction failed name:", errorDetails.name);
     throw new Error(`Transaction failed: ${JSON.stringify(errorDetails)}`);
   }
 
@@ -210,7 +212,8 @@ async function deployStellerContract(contract: Buffer, deployer: Keypair, networ
 
     return address;
   } catch (error) {
-    logger.error(`Error deploying contract: ${error}`, error);
+    logger.error(`Error deploying contract`, error);
+    console.error(`Error deploying contract`, error);
   }
 }
 
